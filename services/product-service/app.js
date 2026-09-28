@@ -70,3 +70,4 @@ app.get('/api/products/:id', (req, res) => {
 
 module.exports = { app, logger };
 // CI pipeline test
+// GitOps deploy test
