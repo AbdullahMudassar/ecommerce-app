@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Demo Shop</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    li { margin: 8px 0; }
+    button { margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Demo Shop</h1>
+  <ul id="products">Loading...</ul>
+  <p id="message"></p>
+  <script>
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((products) => {
+        document.getElementById('products').innerHTML = products
+          .map((p) => `<li>${p.name} - $${p.price}
+             <button onclick="order(${p.id})">Buy</button></li>`)
+          .join('');
+      });
+
+    function order(productId) {
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 'guest', productId, quantity: 1 }),
+      })
+        .then((r) => r.json())
+        .then((o) => {
+          document.getElementById('message').textContent =
+            o.id ? `Order #${o.id} placed! Total: $${o.total}` : `Error: ${o.error}`;
+        });
+    }
+  </script>
+</body>
+</html>
+
