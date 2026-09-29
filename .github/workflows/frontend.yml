@@ -1,0 +1,94 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "services/frontend/**"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "services/frontend/**"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+
+  # =========================
+  # BUILD + SCAN + PUSH
+  # =========================
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ghcr.io/abdullahmudassar/frontend:${{ github.sha }} \
+            services/frontend
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/abdullahmudassar/frontend:${{ github.sha }}
+          severity: CRITICAL
+          exit-code: "1"
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        if: github.event_name == 'push'
+        run: |
+          docker push ghcr.io/abdullahmudassar/frontend:${{ github.sha }}
+
+
+  # =========================
+  # UPDATE GITOPS REPOSITORY
+  # =========================
+  deploy:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v4
+        with:
+          repository: AbdullahMudassar/ecommerce-gitops
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: ecommerce-gitops
+
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/kustomize
+
+      - name: Update frontend image
+        working-directory: ecommerce-gitops/envs/dev
+        run: |
+          kustomize edit set image \
+            frontend=ghcr.io/abdullahmudassar/frontend:${{ github.sha }}
+
+      - name: Commit and push GitOps change
+        working-directory: ecommerce-gitops
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add envs/dev/kustomization.yaml
+          git commit -m "Update frontend image to ${{ github.sha }}"
+          git push
