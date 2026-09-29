@@ -51,7 +51,7 @@ app.get('/metrics', async (req, res, next) => {
 });
 
 const products = [
-  { id: 1, name: 'Wireless Mouse', price: 25 },
+  { id: 1, name: 'Wireless Mouse updated ', price: 25 },
   { id: 2, name: 'Mechanical Keyboard', price: 89 },
   { id: 3, name: 'USB-C Hub', price: 45 },
 ];
