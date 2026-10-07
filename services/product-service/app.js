@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.status(500).json({ status: 'broken' });
 });
 
 app.get('/metrics', async (req, res, next) => {
