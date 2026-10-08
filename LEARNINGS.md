@@ -53,3 +53,8 @@ Opens an interactive shell inside the container.
 
 kubectl delete pod -n ecommerce-dev <pod-name>
 Deletes the Pod; the Deployment creates a replacement.
+
+
+### Kubernetes Secrets
+
+A normal Kubernetes Secret is not encrypted. Its values are only Base64 encoded and can easily be decoded using base64 -d. Therefore, committing a normal Secret to Git is unsafe because Git keeps commit history, so the secret can remain exposed even after the file is deleted. Sealed Secrets allow encrypted secret data to be stored safely in Git.
